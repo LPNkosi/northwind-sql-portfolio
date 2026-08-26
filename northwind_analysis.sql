@@ -1,151 +1,342 @@
--- =============================================
--- Northwind Database SQL Analysis
--- Author: Lindokuhle 
--- Date: 17 May 2026
--- Database: PostgreSQL 18
--- Description: Business analysis queries on the Northwind trading company database
--- =============================================
+USE Northwind;
 
+--1. Customer Analysis
 
-/* Question 1
-Retrieve all products  that are out of stock
-Display: 
-product_id,product_name,units_in_stock
-*/
+SELECT  
+     c.company_name,
+     c.contact_name,
+	 c.city,
+	 c.country
+FROM  customers c
+ORDER BY c.contact_name;
 
-
-SELECT product_id,product_name,
-	   units_in_stock
-FROM products
-WHERE units_in_stock = 0;
-
-/*Question 2 
-Show all customers from Germany including their company name,contact name and city*/
-
-
-SELECT customer_id,
-	   company_name,
-	   contact_name,city
-FROM customers
-WHERE country = 'Germany';
-
-/*Question 3
-Find all orders that were shipped late(where shipped_date is greater than required_date)
-SELECT * FROM orders;
-*/
-
-SELECT order_id, 
-	   customer_id, 
-	   required_date, 
-	   shipped_date,
-       shipped_date - required_date AS days_late
-FROM orders
-WHERE shipped_date > required_date;
-
-/* Question 4 
-Show each order with the customer's company name and the employee's first and last name who handled it
-*/
-/*
-select * FROM customers;
-select * from orders;
-select * FROM employees;*/
-
-SELECT  o.order_id,
-		c.company_name,
-		e.first_name,
-		e.last_name
-FROM orders o
-LEFT JOIN customers c ON o.customer_id = c.customer_id
-LEFT JOIN employees e ON o.employee_id = e.employee_id;
-
-/*Question 5
-List all products with their category name and supplier company name*/
-
-/*select * from Products;
-select * from suppliers;
-select * from categories;*/
-
-SELECT p.product_name,
-	   c.category_name,
-	   s.company_name
+--2. Product Inventory by Unit Price
+  
+SELECT   
+    p.product_name,
+    p.unit_price,
+	p.units_in_stock
 FROM products p
-LEFT JOIN categories c ON p.category_id = c.category_id
-LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id;
+ORDER BY p.unit_price DESC;
 
-/* Question 6
-Show the top 5 customers who placed the most orders, displaying company name and order count*/
- 
-SELECT  c.company_name,
-		COUNT(o.order_id) AS number_of_orders
-FROM customers c
-LEFT JOIN orders o ON c.customer_id = o.customer_id
-GROUP BY  c.company_name
-ORDER BY number_of_orders DESC
-LIMIT 5;
-
-/*Question 7
-Find the total revenue per category (revenue = quantity × unit_price in order_details, join with products and categories)*/
-
-/*select * from Products;
-select * from order_details;
-select * from categories;*/
-
-SELECT  c.category_name,
-		SUM(od.quantity * od.unit_price) AS total_revenue_per_category
-FROM  order_details od
-JOIN products p ON od.product_id = p.product_id
-JOIN categories c ON p.category_id = c.category_id
-GROUP BY c.category_name
-ORDER BY total_revenue_per_category DESC;
-
-/* Question 8
-Which employee made the most sales? Show their full name and total number of orders handled?
-
-SELECT * FROM EMPLOYEES;
-SELECT * FROM order_details;
-SELECT * FROM orders; */
-
-SELECT  CONCAT(e.last_name,' ',e.first_name) AS fullname,
-        e.title,
-		COUNT(o.order_id) AS total_orders_handled
-FROM employees e
-LEFT JOIN orders o ON e.employee_id = o.employee_id
-GROUP BY e.employee_id,e.last_name,e.first_name,e.title
-ORDER BY  total_orders_handled DESC
-LIMIT 1;
-
-/* Question 9
-Find all customers who have never placed an order
-Solution 1: Using Subquery (more readable)*/
-
-SELECT c.company_name, c.contact_name, c.country
-FROM customers c
-WHERE c.customer_id NOT IN (
-    SELECT customer_id
-    FROM orders
-);
-
-/* Solution 2: Using LEFT JOIN (better performance on large datasets)
- When the orders table has millions of rows, this approach is faster
-because PostgreSQL doesn't need to run a separate subquery for each row*/
-
-/* Both return the same results but LEFT JOIN scales better
- in production environments with large data volumes*/
-
-SELECT c.company_name, c.contact_name, c.country
-FROM customers c
-LEFT JOIN orders o ON c.customer_id = o.customer_id
-WHERE o.order_id IS NULL;
-
-
-/*Questio 10
-Show monthly order trends — total number of orders per month across all years*/
-
+--3. Employee Directory
 
 SELECT 
-		EXTRACT (YEAR FROM order_date) AS year,
-		EXTRACT (MONTH FROM order_date) AS month,
-		COUNT(order_id) AS orders_per_month
-		FROM orders 
-		GROUP BY EXTRACT (YEAR FROM order_date),EXTRACT (MONTH FROM order_date)
-		ORDER BY year DESC, month DESC;
+    CONCAT(e.last_name,' ',e.first_name) AS [Full Name],
+    e.title,
+	e.hire_date
+FROM employees e;
+
+--4. Supplier Informatiom
+
+SELECT 
+    s.company_name,
+    s.country
+FROM suppliers s
+
+--5.Categories
+
+SELECT  
+    p.product_name,
+	c.category_name
+FROM products p
+JOIN categories c 
+    ON p.category_id = c.category_id;
+
+--6.Top 10 Products by Sales Revenue
+SELECT TOP 10
+      p.product_id,
+	  p.product_name, 
+      SUM(od.unit_price * od.quantity) AS SalesRevenue
+	  from products p
+JOIN order_details od 
+    ON p.product_id = od.product_id
+GROUP BY  
+    p.product_id,
+    p.product_name
+ORDER BY  SalesRevenue desc;
+
+--7. Top 10 Customers by Total Purchase Value
+
+SELECT TOP  10
+    c.customer_id,
+    c.company_name,
+	SUM(od.unit_price * od.quantity) as TotalPurchaseValue
+	  FROM customers c
+JOIN orders o 
+    ON c.customer_id = o.customer_id
+JOIN order_details od 
+    ON o.order_id = od.order_id
+GROUP BY c.customer_id,
+         c.company_name
+ORDER BY TotalPurchaseValue DESC;
+
+--8.Sales Revenue by Country
+
+SELECT  
+	c.country,
+	SUM(od.unit_price * od.quantity) AS SalesRevenue
+FROM customers c
+JOIN orders o 
+    ON c.customer_id = o.customer_id
+JOIN order_details od 
+    ON o.order_id = od.order_id
+GROUP BY c.country
+ORDER BY SalesRevenue DESC;
+	   
+--9.Employee Order Performance
+
+SELECT 
+    e.employee_id,
+    CONCAT(e.last_name,' ',e.first_name) AS FullName,
+    COUNT(o.order_id) AS TotalOrdersHandled
+FROM employees e
+JOIN orders o 
+    ON e.employee_id = o.employee_id
+GROUP BY 
+    e.employee_id,
+    e.last_name,
+    e.first_name
+ORDER BY TotalOrdersHandled DESC;
+
+--10.Products Above Average Price 
+
+SELECT
+     p.product_id,
+     p.product_name,
+     p.unit_price,
+     (SELECT AVG(unit_price) FROM products)AS AverageProductPrice
+     FROM products p
+where unit_price > 
+ ( 
+    SELECT AVG(unit_price)
+	FROM 
+    products
+  )
+ORDER BY p.unit_price DESC;
+
+--11.Customers With No Orders
+
+SELECT
+    c.customer_id,
+    c.company_name,
+    c.contact_name,
+    c.country
+	FROM customers c
+WHERE  NOT EXISTS
+(  
+   SELECT 1
+   FROM orders o
+   WHERE c.customer_id = o.customer_id
+);
+
+--12.Categories With More Than 10 Products 
+
+SELECT 
+    c.category_name,
+    COUNT(p.product_id) AS Total_products
+FROM categories c
+JOIN products p 
+    ON c.category_id = p.category_id
+GROUP BY c.category_name
+HAVING COUNT(p.product_id) > 10
+ORDER BY total_products DESC;
+
+--13.Monthly Sales Trend
+
+SELECT
+    YEAR(o.shipped_date) AS SalesYear,
+    DATENAME(MONTH, o.shipped_date) AS SalesMonth,
+    SUM(od.unit_price * od.quantity) AS MonthlySales
+FROM orders o
+JOIN order_details od
+    ON o.order_id = od.order_id
+WHERE o.shipped_date IS NOT NULL
+GROUP BY
+    YEAR(o.shipped_date),
+    MONTH(o.shipped_date),
+    DATENAME(MONTH, o.shipped_date)
+ORDER BY
+    YEAR(o.shipped_date),
+    MONTH(o.shipped_date);
+
+--14.Sales Revenue by Catergory 
+
+SELECT 
+      c.category_id,
+      c.category_name,
+      SUM(od.unit_price * od.quantity) AS TotalRevenue
+      FROM categories c
+      JOIN products p 
+           ON c.category_id = p.category_id
+      JOIN order_details od 
+            ON p.product_id = od.product_id
+GROUP BY
+    c.category_id,
+    c.category_name
+ORDER BY TotalRevenue DESC;
+
+
+--15.Best Selling Product in Each Category
+
+WITH ProductSales AS
+(
+    SELECT
+        c.category_id,
+        c.category_name,
+        p.product_id,
+        p.product_name,
+        SUM(od.unit_price * od.quantity) AS ProductRevenue,
+
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY c.category_id
+            ORDER BY SUM(od.unit_price * od.quantity) DESC,
+            p.product_id
+        ) AS RowNum
+
+    FROM products p
+    JOIN categories c
+        ON p.category_id = c.category_id
+    JOIN order_details od
+        ON p.product_id = od.product_id
+
+    GROUP BY
+        c.category_id,
+        c.category_name,
+        p.product_id,
+        p.product_name
+)
+
+SELECT
+   category_id,
+   category_name,
+   product_id,
+   product_name,
+   ProductRevenue
+FROM ProductSales
+WHERE RowNum = 1;
+
+--16.Running Total
+
+WITH DailySales AS 
+
+(    
+   SELECT
+       o.shipped_date,
+       SUM(od.unit_price * od.quantity) AS DailySales
+       FROM orders o
+       JOIN order_details od 
+              ON o.order_id = od.order_id
+       WHERE o.shipped_date IS NOT NULL
+       GROUP BY o.shipped_date
+
+)
+SELECT 
+      shipped_date,
+      DailySales,
+      SUM(DailySales)
+      OVER
+       (  
+           ORDER BY shipped_date  
+       ) AS RunningTotal
+
+FROM DailySales;
+ 
+-- 17.Product Price Classification
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.unit_price,
+    CASE
+        WHEN p.unit_price <= 10 THEN 'Cheap'
+        WHEN p.unit_price  < 30 THEN  'Moderate'
+        ELSE 'Expensive'
+    END AS PriceCategory
+FROM products p;
+
+--18.Customer Purchase Summary view
+
+GO 
+CREATE VIEW  vw_CustomerPurchaseSummary AS
+
+SELECT    
+    c.customer_id,
+    c.company_name,
+    c.contact_name,
+    c.city,
+    c.country,
+    SUM (od.unit_price * od.quantity) AS TotalPurchaseAmount
+    FROM customers c
+          JOIN orders o 
+               ON c.customer_id = o.customer_id
+          JOIN order_details od 
+               ON o.order_id = od.order_id
+          GROUP BY 
+            c.customer_id,
+            c.company_name,
+            c.contact_name,
+            c.city,
+            c.country;
+    
+SELECT * FROM vw_CustomerPurchaseSummary
+
+SELECT TOP 5 *
+FROM vw_CustomerPurchaseSummary
+ORDER BY TotalPurchaseAmount DESC;
+
+--19.Return Sales For a Given Year
+GO
+CREATE PROCEDURE SalesForYear  
+    @Year INT
+ AS
+ BEGIN
+    SELECT 
+        YEAR(o.shipped_date) AS SalesYear,
+        SUM(od.unit_price * od.quantity) AS TotalSalesRevenue
+        FROM orders o
+        JOIN order_details od 
+                   ON o.order_id = od.order_id
+        WHERE YEAR(o.shipped_date) = @Year  
+            AND o.shipped_date IS NOT NULL
+        GROUP BY 
+        YEAR(o.shipped_date);
+ END;
+
+ EXEC SalesForYear @year = 1997;
+
+--20.Create NorthWwind Full Database Backup
+
+GO
+BACKUP DATABASE NORTHWIND
+TO DISK = 'C:\Program Files\Microsoft SQL Server\MSSQL17.MSSQLSERVER\MSSQL\Backup\Northwind_Portfolio.bak'
+WITH
+    INIT,
+    FORMAT,
+    NAME = 'Northwind Portfolio Full Backup'
+GO
+
+--21. Northwind Backup History Report
+
+USE msdb;
+GO
+
+SELECT TOP 10
+        database_name,
+        backup_start_date,
+        backup_finish_date,
+        CASE type
+                WHEN 'D' THEN 'Full Database Backup'
+                WHEN 'I' THEN 'Differential Backup'
+                WHEN 'L' THEN 'Transaction Log Backup'
+                ELSE 'Other'
+        END AS BackupType,
+     CAST(   
+           backup_size/ 1024.0 /1024.0 
+           AS DECIMAL (10,2)
+        )AS BackupSizeMB
+   FROM dbo.backupset
+   WHERE database_name = 'Northwind'
+   ORDER BY backup_finish_date DESC;
+
+        

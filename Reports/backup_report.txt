@@ -1,0 +1,31 @@
+NORTHWIND Backup Report
+=============================================
+
+LATEST BACKUP
+---------------------------------------------
+Database:      NORTHWIND
+Backup Finish: 2026-08-26 22:21:45
+Backup Type:   Full Database Backup
+Backup Size:   6.34 MB
+---------------------------------------------
+
+BACKUP HISTORY
+---------------------------------------------
+Database:      NORTHWIND
+Backup Start:  2026-08-26 22:21:45
+Backup Finish: 2026-08-26 22:21:45
+Backup Type:   Full Database Backup
+Backup Size:   6.34 MB
+---------------------------------------------
+Database:      Northwind
+Backup Start:  2026-08-16 19:07:10
+Backup Finish: 2026-08-16 19:07:10
+Backup Type:   Full Database Backup
+Backup Size:   6.34 MB
+---------------------------------------------
+Database:      Northwind
+Backup Start:  2026-08-15 10:51:51
+Backup Finish: 2026-08-15 10:51:51
+Backup Type:   Full Database Backup
+Backup Size:   6.27 MB
+---------------------------------------------
