@@ -39,7 +39,7 @@ The project demonstrates:
 
 - SELECT statements
 - Filtering with WHERE
-- INNER JOIN and LEFT JOIN
+- INNER JOIN
 - Aggregate functions
 - GROUP BY
 - HAVING
