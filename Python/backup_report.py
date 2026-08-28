@@ -74,7 +74,6 @@ else:
 
     print(report)
 
-    from pathlib import Path
 
     project_folder = Path(__file__).resolve().parent.parent
     reports_folder = project_folder / "Reports"
