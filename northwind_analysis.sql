@@ -22,12 +22,12 @@ ORDER BY p.unit_price DESC;
 --3. Employee Directory
 
 SELECT 
-    CONCAT(e.last_name,' ',e.first_name) AS [Full Name],
+    CONCAT(e.last_name,' ',e.first_name) AS FullName,
     e.title,
 	e.hire_date
 FROM employees e;
 
---4. Supplier Informatiom
+--4. Supplier Information
 
 SELECT 
     s.company_name,
@@ -160,7 +160,7 @@ ORDER BY
     YEAR(o.shipped_date),
     MONTH(o.shipped_date);
 
---14.Sales Revenue by Catergory 
+--14.Sales Revenue by Category 
 
 SELECT 
       c.category_id,
@@ -258,7 +258,7 @@ FROM products p;
 --18.Customer Purchase Summary view
 
 GO 
-CREATE VIEW  vw_CustomerPurchaseSummary AS
+CREATE OR ALTER VIEW  vw_CustomerPurchaseSummary AS
 
 SELECT    
     c.customer_id,
@@ -278,6 +278,7 @@ SELECT
             c.contact_name,
             c.city,
             c.country;
+GO
     
 SELECT * FROM vw_CustomerPurchaseSummary
 
@@ -287,7 +288,7 @@ ORDER BY TotalPurchaseAmount DESC;
 
 --19.Return Sales For a Given Year
 GO
-CREATE PROCEDURE SalesForYear  
+CREATE OR ALTER PROCEDURE SalesForYear  
     @Year INT
  AS
  BEGIN
@@ -302,10 +303,10 @@ CREATE PROCEDURE SalesForYear
         GROUP BY 
         YEAR(o.shipped_date);
  END;
+GO
+ EXEC SalesForYear @year = 1996;
 
- EXEC SalesForYear @year = 1997;
-
---20.Create NorthWwind Full Database Backup
+--20.Create Northwind Full Database Backup
 
 GO
 BACKUP DATABASE NORTHWIND

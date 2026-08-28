@@ -179,7 +179,7 @@ This project demonstrates practical experience with:
 
 ## Project Outcome
 
-This project helped me strengthen my SQL Server skills while developing practical database administration experience.
+This project helped me strengthen my SQL Server skills while developing practical database administration skills.
 
 The combination of SQL analysis, database objects, backup operations, and Python automation demonstrates how database skills can be applied beyond writing individual queries.
 
